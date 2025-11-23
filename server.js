@@ -1,47 +1,64 @@
-const http = require('http');
+ï»¿const http = require('http');
 
-// Ãåíåðèðóåì ñëó÷àéíûå íàñòðîéêè äëÿ ïëèòû
 function generateConfig() {
-    return {
-        moveInterval: (Math.random() * 1.5 + 0.5).toFixed(2), // 0.5 - 2.0
-        moveDuration: (Math.random() * 0.7 + 0.3).toFixed(2), // 0.3 - 1.0
-        moveDistance: (Math.random() * 0.4 + 0.1).toFixed(2), // 0.1 - 0.5
-        shouldMoveDown: Math.random() > 0.5, // true = âíèç, false = ââåðõ
-        isEnabled: true,
-        timestamp: Date.now() // Óíèêàëüíîå çíà÷åíèå êàæäûé ðàç
-    };
+  return {
+    moveInterval: (Math.random() * 1.5 + 0.5).toFixed(2),
+    moveDuration: (Math.random() * 0.7 + 0.3).toFixed(2),
+    moveDistance: (Math.random() * 0.4 + 0.1).toFixed(2),
+    shouldMoveDown: Math.random() > 0.5,
+    isEnabled: true,
+    timestamp: Date.now()
+  };
 }
 
-// Ñîçäàåì ñåðâåð
 const server = http.createServer((req, res) => {
-    console.log('Request received:', req.url);
-
-    // Ðàçðåøàåì CORS (÷òîáû Unity ìîã äåëàòü çàïðîñû)
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    // Îáðàáàòûâàåì preflight çàïðîñû
-    if (req.method === 'OPTIONS') {
-        res.writeHead(200);
-        res.end();
-        return;
-    }
-
-    // Îòäàåì êîíôèã ïî ëþáîìó URL ïóòè
-    if (req.method === 'GET') {
-        const config = generateConfig();
-
-        res.setHeader('Content-Type', 'application/json');
-        res.writeHead(200);
-        res.end(JSON.stringify(config, null, 2));
-
-        console.log('Config sent:', JSON.stringify(config, null, 2));
-    } else {
-        res.writeHead(404);
-        res.end(JSON.stringify({ error: 'Not Found' }));
-    }
+  console.log('Request received:', req.url, req.method);
+  
+  // Ð Ð°Ð·Ñ€ÐµÑˆÐ°ÐµÐ¼ CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+  
+  // ÐžÑ‚Ð´Ð°ÐµÐ¼ ÐºÐ¾Ð½Ñ„Ð¸Ð³ Ð´Ð»Ñ Ð»ÑŽÐ±Ð¾Ð³Ð¾ GET Ð·Ð°Ð¿Ñ€Ð¾ÑÐ°
+  if (req.method === 'GET') {
+    const config = generateConfig();
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.writeHead(200);
+    res.end(JSON.stringify(config));
+    
+    console.log('Config sent:', JSON.stringify(config));
+  } else {
+    res.writeHead(404);
+    res.end(JSON.stringify({ error: 'Not Found' }));
+  }
 });
 
-// Çàïóñêàåì ñåðâåð
+// Ð’ÐÐ–ÐÐž: Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÐ¼ Ð¿Ð¾Ñ€Ñ‚ Ð¸Ð· Ð¿ÐµÑ€ÐµÐ¼ÐµÐ½Ð½Ð¾Ð¹ Ð¾ÐºÑ€ÑƒÐ¶ÐµÐ½Ð¸Ñ Render
 const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, '0.0.0.0', () => {  // Ð”Ð¾Ð±Ð°Ð²Ð¸Ð» '0.0.0.0'
+  console.log('Server started successfully!');
+  console.log(`Port: ${PORT}`);
+  console.log('Ready to accept requests');
+});
+
+// ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ° Ð¾ÑˆÐ¸Ð±Ð¾Ðº ÑÐµÑ€Ð²ÐµÑ€Ð°
+server.on('error', (error) => {
+  console.error('âŒ Server error:', error);
+});
+
+// ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ° graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
